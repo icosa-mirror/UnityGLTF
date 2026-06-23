@@ -364,8 +364,27 @@ namespace UnityGLTF
 			    foreach (var pluginType in GetTypesDerivedFrom<T>())
 			    {
 				    if (pluginType.IsAbstract) continue;
-				    if (plugins.Any(p => p != null && p.GetType() == pluginType))
+				    T existingPlugin = plugins.FirstOrDefault(p => p != null && p.GetType() == pluginType);
+				    if (existingPlugin)
+				    {
+					    plugins.RemoveAll(p => p != existingPlugin && p != null && p.GetType() == pluginType);
 					    continue;
+				    }
+
+#if UNITY_EDITOR
+				    if (AssetDatabase.Contains(settings))
+				    {
+					    string settingsPath = AssetDatabase.GetAssetPath(settings);
+					    existingPlugin = AssetDatabase.LoadAllAssetsAtPath(settingsPath)
+						    .OfType<T>()
+						    .FirstOrDefault(p => p != null && p.GetType() == pluginType);
+					    if (existingPlugin)
+					    {
+						    plugins.Add(existingPlugin);
+						    continue;
+					    }
+				    }
+#endif
 				    
 				    if (typeof(ScriptableObject).IsAssignableFrom(pluginType))
 				    {
